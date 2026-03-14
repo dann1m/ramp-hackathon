@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -23,6 +22,7 @@ export default function Chatbot() {
     }
   ]);
   const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -33,107 +33,95 @@ export default function Chatbot() {
     scrollToBottom();
   }, [messages]);
 
-  // Simulated AI responses
-  const generateBotResponse = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase();
+  const callGeminiAgent = async (userMessage: string): Promise<string> => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-    // Event creation and management
-    if (lowerMessage.includes('event') && (lowerMessage.includes('create') || lowerMessage.includes('add') || lowerMessage.includes('new'))) {
-      return "To create a new event, go to the Events page and click 'Add Event'. I'll automatically generate tasks for:\n\n✓ Venue booking (6 weeks before)\n✓ Marketing materials (4 weeks before)\n✓ Invitations (4 weeks before)\n✓ Sponsor outreach (for fundraisers)\n✓ Logistics finalization (2 weeks before)\n✓ Check-in system (1 week before)\n✓ Final walkthrough (3 days before)\n\nJust provide the event details and I'll handle the rest!";
+    if (!apiKey) {
+      return "The AI agent isn't configured yet. Please set VITE_GEMINI_API_KEY in your environment so I can talk to Gemini.";
     }
 
-    if (lowerMessage.includes('event') && (lowerMessage.includes('update') || lowerMessage.includes('edit') || lowerMessage.includes('change'))) {
-      return "To update an event, go to the Events page and click the edit icon on any event. You can update:\n\n• Event status (Draft → Planning → Ready → Completed)\n• Actual attendance (to calculate success rate)\n• Actual costs and revenue (to auto-calculate ROI)\n• Venue and other details\n\nWhen you mark an event as 'Completed' and add the final numbers, I'll automatically calculate ROI, profit, and attendance success rate!";
-    }
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  {
+                    text:
+                      "You are an AI assistant helping a student club officer manage events, budgets, analytics, and tasks in a dashboard app. Be concise, practical, and focused on club operations.\n\nUser message: " +
+                      userMessage,
+                  },
+                ],
+              },
+            ],
+        }),
+        }
+      );
 
-    if (lowerMessage.includes('automat') || lowerMessage.includes('auto-generat')) {
-      return "Our automation features:\n\n📋 **Task Generation**: Creating an event automatically generates 7+ tasks with smart due dates\n📊 **Metric Calculation**: ROI, profit, and success rates are auto-calculated when you add event results\n📅 **Timeline Management**: Tasks are scheduled based on your event date (6 weeks to 3 days before)\n👥 **Team Assignment**: Tasks are assigned to appropriate team members based on category\n\nThis saves hours of manual work and ensures nothing is forgotten!";
-    }
+      if (!response.ok) {
+        let errorDetail = '';
+        try {
+          const errorJson = await response.json();
+          errorDetail =
+            errorJson?.error?.message || JSON.stringify(errorJson);
+        } catch {
+          errorDetail = await response.text();
+        }
 
-    // Analytics and metrics help
-    if (lowerMessage.includes('roi') || lowerMessage.includes('return')) {
-      return "ROI (Return on Investment) shows how much revenue you generate per dollar spent. Your average ROI is 3.2x, meaning for every $1 spent, you earn $3.20. The Winter Gala had the best ROI at 3.47x. To improve ROI, focus on: 1) Reducing event costs through better vendor negotiations, 2) Increasing revenue via sponsorships, 3) Learning from your highest-performing events.";
-    }
-    
-    if (lowerMessage.includes('attendance') || lowerMessage.includes('attendees')) {
-      return "Your average event success rate is 112%, meaning you're exceeding expected attendance! The Career Fair was your most successful with 133% attendance (200 actual vs 150 expected). To maintain this: 1) Promote events 2-3 weeks in advance, 2) Use social media and email campaigns, 3) Offer early-bird incentives, 4) Partner with other clubs for cross-promotion.";
-    }
+        console.error('Gemini API error', errorDetail || response.statusText);
+        return (
+          'The AI service returned an error: ' +
+          (errorDetail || response.statusText || 'Unknown error.')
+        );
+      }
 
-    if (lowerMessage.includes('budget') || lowerMessage.includes('spending')) {
-      return "You've spent $4,250 (65.4%) of your $6,500 budget, leaving $2,250 remaining. Your largest category is Events ($2,150/$3,000). To optimize: 1) Track all expenses in real-time, 2) Get quotes from multiple vendors, 3) Use free campus resources when possible, 4) Plan a reserve fund for emergencies (10-15% of budget).";
+      const data = await response.json();
+      const content =
+        data.candidates?.[0]?.content?.parts
+          ?.map((p: { text?: string }) => p.text || '')
+          .join(' ')
+          .trim() ||
+        'Sorry, I could not generate a response.';
+
+      return content;
+    } catch (error) {
+      console.error('Gemini request failed', error);
+      return 'Sorry, something went wrong while talking to the AI service.';
     }
-
-    if (lowerMessage.includes('profit') || lowerMessage.includes('revenue')) {
-      return "Your total net profit across all events is $12,200 with $17,100 in revenue and $4,900 in costs. The Winter Gala generated the most profit at $3,700. To increase profit: 1) Secure sponsorships early, 2) Offer tiered ticket pricing, 3) Reduce venue costs by using campus spaces, 4) Sell merchandise at events.";
-    }
-
-    // Task suggestions
-    if (lowerMessage.includes('task') && (lowerMessage.includes('idea') || lowerMessage.includes('suggest') || lowerMessage.includes('create'))) {
-      const taskIdeas = [
-        "Marketing: Create an Instagram Reel showcasing your last event highlights",
-        "Finance: Reach out to 5 local businesses for event sponsorship opportunities",
-        "Events: Survey members about preferred event themes for next semester",
-        "Outreach: Partner with another student organization for a joint event",
-        "Operations: Update your club's member database and contact information",
-        "Marketing: Design a newsletter template for monthly club updates",
-        "Finance: Create a financial report for your advisor or student activities",
-        "Events: Book venues for next semester's major events (get early discounts!)",
-        "Communications: Write blog posts about recent club achievements",
-        "Outreach: Organize a volunteering opportunity for club members"
-      ];
-      const randomTask = taskIdeas[Math.floor(Math.random() * taskIdeas.length)];
-      return `Here's a task idea: "${randomTask}"\n\nWould you like more suggestions or help breaking this down into steps?`;
-    }
-
-    if (lowerMessage.includes('team') || lowerMessage.includes('assign')) {
-      return "When assigning tasks, consider: 1) Each team member's strengths and interests, 2) Current workload distribution, 3) Deadlines and priorities, 4) Skills development opportunities. Your teams are: Marketing (Sarah Chen, Emma Davis), Events (Mike Johnson, Jessica Lee), Finance (Alex Brown, David Kim), and Outreach (Rachel Martinez, Tom Anderson).";
-    }
-
-    // Event planning
-    if (lowerMessage.includes('event') && (lowerMessage.includes('plan') || lowerMessage.includes('organize'))) {
-      return "For successful event planning: 1) Start 6-8 weeks in advance, 2) Create a detailed budget and timeline, 3) Book venue and vendors early, 4) Promote heavily 2-3 weeks before, 5) Have a backup plan for outdoor events, 6) Assign clear roles to team members, 7) Send thank-you notes to sponsors and attendees. Your past events show that proper planning leads to higher attendance and ROI!";
-    }
-
-    // Fundraising
-    if (lowerMessage.includes('fundrais') || lowerMessage.includes('sponsor')) {
-      return "Fundraising tips: 1) Create a professional sponsorship packet with your club's impact metrics, 2) Target local businesses that align with your mission, 3) Offer sponsorship tiers (Bronze, Silver, Gold), 4) Provide sponsor benefits (logo placement, social media shoutouts), 5) Follow up with sponsors within 48 hours of events, 6) Share impact reports showing how funds were used.";
-    }
-
-    // Default responses
-    const defaultResponses = [
-      "I can help you with:\n• Creating and managing events (with auto-task generation!)\n• Understanding your analytics (ROI, attendance, profit)\n• Budget management tips\n• Task and event planning ideas\n• Team coordination strategies\n\nWhat would you like to explore?",
-      "Try asking me about:\n• \"How do I create a new event?\"\n• \"How can I improve our event ROI?\"\n• \"Suggest some task ideas\"\n• \"How's our budget looking?\"\n• \"What gets automated?\"\n• \"Tips for increasing event attendance\"",
-      "I'm here to help! You can ask me about event management automation, club performance metrics, task suggestions, or strategies for better event planning and budgeting."
-    ];
-
-    return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
-    // Add user message
     const userMessage: Message = {
-      id: messages.length + 1,
+      id: Date.now(),
       text: inputValue,
       sender: 'user',
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
-
-    // Simulate bot typing and response
-    setTimeout(() => {
-      const botMessage: Message = {
-        id: messages.length + 2,
-        text: generateBotResponse(inputValue),
-        sender: 'bot',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMessage]);
-    }, 500);
-
+    setIsLoading(true);
     setInputValue('');
+
+    const botText = await callGeminiAgent(userMessage.text);
+
+    const botMessage: Message = {
+      id: Date.now() + 1,
+      text: botText,
+      sender: 'bot',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, botMessage]);
+    setIsLoading(false);
   };
 
   const handleQuickAction = (action: string) => {
@@ -239,6 +227,13 @@ export default function Chatbot() {
                 </div>
               </div>
             ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] rounded-lg p-3 bg-white text-slate-500 border border-slate-200 text-sm italic">
+                  Thinking…
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 
@@ -254,7 +249,7 @@ export default function Chatbot() {
               />
               <Button
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim()}
+                disabled={!inputValue.trim() || isLoading}
                 size="icon"
                 className="bg-gradient-to-r from-purple-600 to-blue-600"
               >

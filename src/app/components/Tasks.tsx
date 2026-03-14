@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -9,6 +9,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import confetti from 'canvas-confetti';
+import { useAuth } from './AuthContext';
 
 interface Task {
   id: number;
@@ -41,97 +42,128 @@ const boardMembers = [
   'Tom Anderson'
 ];
 
-export default function Tasks() {
-  // Simulated logged-in user (in real app, this would come from auth)
-  const currentUser = 'Sarah Chen';
-  const currentUserTeam = Object.entries(teams).find(([team, members]) => 
-    members.includes(currentUser)
-  )?.[0] || '';
+const STORAGE_KEY = 'clubhub-tasks';
 
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: 1,
-      title: 'Design Spring Fundraiser Flyers',
-      description: 'Create promotional materials for the upcoming fundraiser event',
-      assignee: 'Sarah Chen',
-      dueDate: '2026-03-18',
-      priority: 'High',
-      status: 'In Progress',
-      category: 'Marketing',
-      team: 'Marketing'
-    },
-    {
-      id: 2,
-      title: 'Book Venue for Networking Mixer',
-      description: 'Research and secure venue for March 28th event',
-      assignee: 'Mike Johnson',
-      dueDate: '2026-03-16',
-      priority: 'High',
-      status: 'To Do',
-      category: 'Events',
-      team: 'Events'
-    },
-    {
-      id: 3,
-      title: 'Update Club Website',
-      description: 'Add recent event photos and update member directory',
-      assignee: 'Emma Davis',
-      dueDate: '2026-03-20',
-      priority: 'Medium',
-      status: 'In Progress',
-      category: 'Communications',
-      team: 'Marketing'
-    },
-    {
-      id: 4,
-      title: 'Review Sponsorship Proposals',
-      description: 'Evaluate three potential sponsors for Spring Fundraiser',
-      assignee: 'Alex Brown',
-      dueDate: '2026-03-17',
-      priority: 'High',
-      status: 'To Do',
-      category: 'Finance',
-      team: 'Finance'
-    },
-    {
-      id: 5,
-      title: 'Plan Community Outreach',
-      description: 'Develop strategy for April community service project',
-      assignee: 'Jessica Lee',
-      dueDate: '2026-03-25',
-      priority: 'Medium',
-      status: 'To Do',
-      category: 'Outreach',
-      team: 'Events'
-    },
-    {
-      id: 6,
-      title: 'Send Thank You Notes',
-      description: 'Write thank you notes to last event sponsors',
-      assignee: 'Rachel Martinez',
-      dueDate: '2026-03-15',
-      priority: 'Low',
-      status: 'Completed',
-      category: 'Relations',
-      team: 'Outreach'
-    },
-    {
-      id: 7,
-      title: 'Create Social Media Content Calendar',
-      description: 'Plan Instagram and Facebook posts for next month',
-      assignee: 'Sarah Chen',
-      dueDate: '2026-03-22',
-      priority: 'Medium',
-      status: 'To Do',
-      category: 'Marketing',
-      team: 'Marketing'
-    },
-  ]);
+const defaultTasks: Task[] = [
+  {
+    id: 1,
+    title: 'Design Spring Fundraiser Flyers',
+    description: 'Create promotional materials for the upcoming fundraiser event',
+    assignee: 'Sarah Chen',
+    dueDate: '2026-03-18',
+    priority: 'High',
+    status: 'In Progress',
+    category: 'Marketing',
+    team: 'Marketing',
+  },
+  {
+    id: 2,
+    title: 'Book Venue for Networking Mixer',
+    description: 'Research and secure venue for March 28th event',
+    assignee: 'Mike Johnson',
+    dueDate: '2026-03-16',
+    priority: 'High',
+    status: 'To Do',
+    category: 'Events',
+    team: 'Events',
+  },
+  {
+    id: 3,
+    title: 'Update Club Website',
+    description: 'Add recent event photos and update member directory',
+    assignee: 'Emma Davis',
+    dueDate: '2026-03-20',
+    priority: 'Medium',
+    status: 'In Progress',
+    category: 'Communications',
+    team: 'Marketing',
+  },
+  {
+    id: 4,
+    title: 'Review Sponsorship Proposals',
+    description: 'Evaluate three potential sponsors for Spring Fundraiser',
+    assignee: 'Alex Brown',
+    dueDate: '2026-03-17',
+    priority: 'High',
+    status: 'To Do',
+    category: 'Finance',
+    team: 'Finance',
+  },
+  {
+    id: 5,
+    title: 'Plan Community Outreach',
+    description: 'Develop strategy for April community service project',
+    assignee: 'Jessica Lee',
+    dueDate: '2026-03-25',
+    priority: 'Medium',
+    status: 'To Do',
+    category: 'Outreach',
+    team: 'Events',
+  },
+  {
+    id: 6,
+    title: 'Send Thank You Notes',
+    description: 'Write thank you notes to last event sponsors',
+    assignee: 'Rachel Martinez',
+    dueDate: '2026-03-15',
+    priority: 'Low',
+    status: 'Completed',
+    category: 'Relations',
+    team: 'Outreach',
+  },
+  {
+    id: 7,
+    title: 'Create Social Media Content Calendar',
+    description: 'Plan Instagram and Facebook posts for next month',
+    assignee: 'Sarah Chen',
+    dueDate: '2026-03-22',
+    priority: 'Medium',
+    status: 'To Do',
+    category: 'Marketing',
+    team: 'Marketing',
+  },
+];
+
+export default function Tasks() {
+  const { user } = useAuth();
+
+  const currentUser = user?.name ?? 'Sarah Chen';
+  const currentUserTeam =
+    Object.entries(teams).find(([, members]) => members.includes(currentUser))?.[0] || '';
+
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    if (typeof window === 'undefined') return defaultTasks;
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      return stored ? (JSON.parse(stored) as Task[]) : defaultTasks;
+    } catch {
+      return defaultTasks;
+    }
+  });
 
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterAssignee, setFilterAssignee] = useState<string>('all');
   const [filterTeam, setFilterTeam] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const [newTask, setNewTask] = useState<Partial<Task>>({
+    title: '',
+    description: '',
+    assignee: currentUser,
+    priority: 'Medium',
+    status: 'To Do',
+    category: 'General',
+    team: currentUserTeam || 'Marketing',
+    dueDate: new Date().toISOString().split('T')[0],
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    } catch {
+      // ignore
+    }
+  }, [tasks]);
 
   const toggleTaskStatus = (taskId: number) => {
     setTasks(tasks.map(task => {
@@ -156,20 +188,67 @@ export default function Tasks() {
     }));
   };
 
-  const filteredTasks = tasks.filter(task => {
-    if (filterStatus !== 'all' && task.status !== filterStatus) return false;
-    if (filterAssignee !== 'all' && task.assignee !== filterAssignee) return false;
-    if (filterTeam === 'my-team' && task.team !== currentUserTeam) return false;
-    if (filterTeam === 'my-tasks' && task.assignee !== currentUser) return false;
-    if (filterTeam !== 'all' && filterTeam !== 'my-team' && filterTeam !== 'my-tasks' && task.team !== filterTeam) return false;
-    return true;
-  });
+  const filteredTasks = useMemo(
+    () =>
+      tasks.filter((task) => {
+        if (filterStatus !== 'all' && task.status !== filterStatus) return false;
+        if (filterAssignee !== 'all' && task.assignee !== filterAssignee) return false;
+        if (filterTeam === 'my-team' && task.team !== currentUserTeam) return false;
+        if (filterTeam === 'my-tasks' && task.assignee !== currentUser) return false;
+        if (
+          filterTeam !== 'all' &&
+          filterTeam !== 'my-team' &&
+          filterTeam !== 'my-tasks' &&
+          task.team !== filterTeam
+        )
+          return false;
+        return true;
+      }),
+    [tasks, filterStatus, filterAssignee, filterTeam, currentUserTeam, currentUser],
+  );
 
   const taskStats = {
     total: tasks.length,
     completed: tasks.filter(t => t.status === 'Completed').length,
     inProgress: tasks.filter(t => t.status === 'In Progress').length,
     toDo: tasks.filter(t => t.status === 'To Do').length,
+  };
+
+  const handleCreateTask = () => {
+    if (!newTask.title || !newTask.assignee || !newTask.dueDate) {
+      alert('Please fill in title, assignee, and due date.');
+      return;
+    }
+
+    const next: Task = {
+      id: tasks.length ? Math.max(...tasks.map((t) => t.id)) + 1 : 1,
+      title: newTask.title,
+      description: newTask.description || '',
+      assignee: newTask.assignee,
+      dueDate: newTask.dueDate,
+      priority: (newTask.priority as Task['priority']) || 'Medium',
+      status: (newTask.status as Task['status']) || 'To Do',
+      category: newTask.category || 'General',
+      team: newTask.team || currentUserTeam || 'Marketing',
+    };
+
+    setTasks((prev) => [...prev, next]);
+    setIsDialogOpen(false);
+    setNewTask({
+      title: '',
+      description: '',
+      assignee: currentUser,
+      priority: 'Medium',
+      status: 'To Do',
+      category: 'General',
+      team: currentUserTeam || 'Marketing',
+      dueDate: new Date().toISOString().split('T')[0],
+    });
+  };
+
+  const handleDeleteTask = (taskId: number) => {
+    if (!window.confirm('Delete this task?')) return;
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
   };
 
   const getPriorityColor = (priority: string) => {
@@ -212,16 +291,29 @@ export default function Tasks() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="task-title">Task Title</Label>
-                <Input id="task-title" placeholder="Enter task title" />
+                <Input
+                  id="task-title"
+                  placeholder="Enter task title"
+                  value={newTask.title || ''}
+                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="task-description">Description</Label>
-                <Textarea id="task-description" placeholder="Enter task description" />
+                <Textarea
+                  id="task-description"
+                  placeholder="Enter task description"
+                  value={newTask.description || ''}
+                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="task-assignee">Assign To</Label>
-                  <Select>
+                  <Select
+                    value={newTask.assignee}
+                    onValueChange={(value) => setNewTask({ ...newTask, assignee: value })}
+                  >
                     <SelectTrigger id="task-assignee">
                       <SelectValue placeholder="Select member" />
                     </SelectTrigger>
@@ -234,7 +326,12 @@ export default function Tasks() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="task-priority">Priority</Label>
-                  <Select>
+                  <Select
+                    value={newTask.priority}
+                    onValueChange={(value) =>
+                      setNewTask({ ...newTask, priority: value as Task['priority'] })
+                    }
+                  >
                     <SelectTrigger id="task-priority">
                       <SelectValue placeholder="Select priority" />
                     </SelectTrigger>
@@ -248,9 +345,16 @@ export default function Tasks() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="task-date">Due Date</Label>
-                <Input id="task-date" type="date" />
+                <Input
+                  id="task-date"
+                  type="date"
+                  value={newTask.dueDate || ''}
+                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                />
               </div>
-              <Button className="w-full">Create Task</Button>
+              <Button className="w-full" type="button" onClick={handleCreateTask}>
+                Create Task
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -422,6 +526,12 @@ export default function Tasks() {
                     <Badge variant="outline" className="text-slate-600">
                       {task.category}
                     </Badge>
+                    <button
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="ml-auto text-xs text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
                   </div>
                 </div>
               </div>

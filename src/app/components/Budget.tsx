@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
@@ -26,18 +26,45 @@ interface Transaction {
   type: 'expense' | 'income';
 }
 
+const CATEGORIES_STORAGE_KEY = 'clubhub-budget-categories';
+const TRANSACTIONS_STORAGE_KEY = 'clubhub-budget-transactions';
+
 export default function Budget() {
   const totalBudget = 6500;
-  
-  const [categories, setCategories] = useState<BudgetCategory[]>([
+
+  const [categories, setCategories] = useState<BudgetCategory[]>(() => {
+    if (typeof window === 'undefined')
+      return [
     { id: 1, name: 'Events', allocated: 3000, spent: 2150, color: 'bg-blue-500' },
     { id: 2, name: 'Marketing', allocated: 1200, spent: 850, color: 'bg-purple-500' },
     { id: 3, name: 'Operations', allocated: 800, spent: 650, color: 'bg-green-500' },
     { id: 4, name: 'Outreach', allocated: 900, spent: 400, color: 'bg-orange-500' },
     { id: 5, name: 'Technology', allocated: 600, spent: 200, color: 'bg-pink-500' },
-  ]);
+  ];
 
-  const [transactions, setTransactions] = useState<Transaction[]>([
+    try {
+      const stored = window.localStorage.getItem(CATEGORIES_STORAGE_KEY);
+      return stored ? (JSON.parse(stored) as BudgetCategory[]) : [
+        { id: 1, name: 'Events', allocated: 3000, spent: 2150, color: 'bg-blue-500' },
+        { id: 2, name: 'Marketing', allocated: 1200, spent: 850, color: 'bg-purple-500' },
+        { id: 3, name: 'Operations', allocated: 800, spent: 650, color: 'bg-green-500' },
+        { id: 4, name: 'Outreach', allocated: 900, spent: 400, color: 'bg-orange-500' },
+        { id: 5, name: 'Technology', allocated: 600, spent: 200, color: 'bg-pink-500' },
+      ];
+    } catch {
+      return [
+        { id: 1, name: 'Events', allocated: 3000, spent: 2150, color: 'bg-blue-500' },
+        { id: 2, name: 'Marketing', allocated: 1200, spent: 850, color: 'bg-purple-500' },
+        { id: 3, name: 'Operations', allocated: 800, spent: 650, color: 'bg-green-500' },
+        { id: 4, name: 'Outreach', allocated: 900, spent: 400, color: 'bg-orange-500' },
+        { id: 5, name: 'Technology', allocated: 600, spent: 200, color: 'bg-pink-500' },
+      ];
+    }
+  });
+
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    if (typeof window === 'undefined')
+      return [
     { id: 1, category: 'Events', description: 'Winter Gala Venue Deposit', amount: -1200, date: '2026-03-10', type: 'expense' },
     { id: 2, category: 'Marketing', description: 'Social Media Ads', amount: -350, date: '2026-03-12', type: 'expense' },
     { id: 3, category: 'Events', description: 'Sponsorship - Tech Corp', amount: 1500, date: '2026-03-08', type: 'income' },
@@ -49,10 +76,54 @@ export default function Budget() {
     { id: 9, category: 'Events', description: 'January Alumni Dinner', amount: -950, date: '2026-01-28', type: 'expense' },
     { id: 10, category: 'Technology', description: 'Website Hosting (Feb)', amount: -50, date: '2026-02-01', type: 'expense' },
     { id: 11, category: 'Operations', description: 'February Office Rent', amount: -300, date: '2026-02-01', type: 'expense' },
-  ]);
+  ];
+
+    try {
+      const stored = window.localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
+      return stored ? (JSON.parse(stored) as Transaction[]) : [
+        { id: 1, category: 'Events', description: 'Winter Gala Venue Deposit', amount: -1200, date: '2026-03-10', type: 'expense' },
+        { id: 2, category: 'Marketing', description: 'Social Media Ads', amount: -350, date: '2026-03-12', type: 'expense' },
+        { id: 3, category: 'Events', description: 'Sponsorship - Tech Corp', amount: 1500, date: '2026-03-08', type: 'income' },
+        { id: 4, category: 'Operations', description: 'Office Supplies', amount: -125, date: '2026-03-11', type: 'expense' },
+        { id: 5, category: 'Marketing', description: 'Print Materials', amount: -275, date: '2026-03-09', type: 'expense' },
+        { id: 6, category: 'Outreach', description: 'Community Event Supplies', amount: -180, date: '2026-03-13', type: 'expense' },
+        { id: 7, category: 'Events', description: 'February Mixer Catering', amount: -450, date: '2026-02-15', type: 'expense' },
+        { id: 8, category: 'Marketing', description: 'January Campaign', amount: -225, date: '2026-01-20', type: 'expense' },
+        { id: 9, category: 'Events', description: 'January Alumni Dinner', amount: -950, date: '2026-01-28', type: 'expense' },
+        { id: 10, category: 'Technology', description: 'Website Hosting (Feb)', amount: -50, date: '2026-02-01', type: 'expense' },
+        { id: 11, category: 'Operations', description: 'February Office Rent', amount: -300, date: '2026-02-01', type: 'expense' },
+      ];
+    } catch {
+      return [
+        { id: 1, category: 'Events', description: 'Winter Gala Venue Deposit', amount: -1200, date: '2026-03-10', type: 'expense' },
+        { id: 2, category: 'Marketing', description: 'Social Media Ads', amount: -350, date: '2026-03-12', type: 'expense' },
+      ];
+    }
+  });
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
+
+  const [newTransaction, setNewTransaction] = useState<Partial<Transaction>>({
+    type: 'expense',
+    date: new Date().toISOString().split('T')[0],
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
+    } catch {
+      // ignore
+    }
+  }, [categories]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(transactions));
+    } catch {
+      // ignore
+    }
+  }, [transactions]);
 
   const totalAllocated = categories.reduce((sum, cat) => sum + cat.allocated, 0);
   const totalSpent = categories.reduce((sum, cat) => sum + cat.spent, 0);
@@ -60,25 +131,89 @@ export default function Budget() {
   const budgetUsagePercent = (totalSpent / totalAllocated) * 100;
 
   // Filter transactions by month
-  const filteredTransactions = selectedMonth === 'all' 
-    ? transactions 
-    : transactions.filter(t => {
-        const transactionDate = new Date(t.date);
-        const transactionMonth = transactionDate.toLocaleString('en-US', { year: 'numeric', month: 'long' });
-        return transactionMonth === selectedMonth;
-      });
+  const filteredTransactions = useMemo(
+    () =>
+      selectedMonth === 'all'
+        ? transactions
+        : transactions.filter((t) => {
+            const transactionDate = new Date(t.date);
+            const transactionMonth = transactionDate.toLocaleString('en-US', {
+              year: 'numeric',
+              month: 'long',
+            });
+            return transactionMonth === selectedMonth;
+          }),
+    [transactions, selectedMonth],
+  );
 
   // Get unique months from transactions
-  const uniqueMonths = Array.from(new Set(
-    transactions.map(t => new Date(t.date).toLocaleString('en-US', { year: 'numeric', month: 'long' }))
-  )).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  const uniqueMonths = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          transactions.map((t) =>
+            new Date(t.date).toLocaleString('en-US', { year: 'numeric', month: 'long' }),
+          ),
+        ),
+      ).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()),
+    [transactions],
+  );
 
   // Calculate monthly spending
-  const monthlySpending = selectedMonth === 'all' 
-    ? totalSpent 
-    : filteredTransactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  const monthlySpending =
+    selectedMonth === 'all'
+      ? totalSpent
+      : filteredTransactions
+          .filter((t) => t.type === 'expense')
+          .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  const handleAddTransaction = () => {
+    if (!newTransaction.category || !newTransaction.amount || !newTransaction.date || !newTransaction.type) {
+      alert('Please fill in type, category, amount, and date.');
+      return;
+    }
+
+    const amountNumber = Number(newTransaction.amount);
+    if (Number.isNaN(amountNumber) || amountNumber <= 0) {
+      alert('Amount must be a positive number.');
+      return;
+    }
+
+    const isExpense = newTransaction.type === 'expense';
+    const signedAmount = isExpense ? -Math.abs(amountNumber) : Math.abs(amountNumber);
+
+    const tx: Transaction = {
+      id: transactions.length ? Math.max(...transactions.map((t) => t.id)) + 1 : 1,
+      category: newTransaction.category,
+      description: newTransaction.description || '',
+      amount: signedAmount,
+      date: newTransaction.date,
+      type: newTransaction.type,
+    };
+
+    setTransactions((prev) => [...prev, tx]);
+
+    // Update category spent
+    setCategories((prev) =>
+      prev.map((cat) =>
+        cat.name === tx.category
+          ? {
+              ...cat,
+              spent: Math.max(
+                0,
+                cat.spent + (isExpense ? amountNumber : -amountNumber),
+              ),
+            }
+          : cat,
+      ),
+    );
+
+    setIsDialogOpen(false);
+    setNewTransaction({
+      type: 'expense',
+      date: new Date().toISOString().split('T')[0],
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -102,7 +237,12 @@ export default function Budget() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="transaction-type">Type</Label>
-                <Select>
+                <Select
+                  value={newTransaction.type}
+                  onValueChange={(value) =>
+                    setNewTransaction({ ...newTransaction, type: value as 'expense' | 'income' })
+                  }
+                >
                   <SelectTrigger id="transaction-type">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -114,7 +254,10 @@ export default function Budget() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="transaction-category">Category</Label>
-                <Select>
+                <Select
+                  value={newTransaction.category}
+                  onValueChange={(value) => setNewTransaction({ ...newTransaction, category: value })}
+                >
                   <SelectTrigger id="transaction-category">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -127,17 +270,37 @@ export default function Budget() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="transaction-description">Description</Label>
-                <Input id="transaction-description" placeholder="Enter description" />
+                <Input
+                  id="transaction-description"
+                  placeholder="Enter description"
+                  value={newTransaction.description || ''}
+                  onChange={(e) => setNewTransaction({ ...newTransaction, description: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="transaction-amount">Amount ($)</Label>
-                <Input id="transaction-amount" type="number" placeholder="0.00" />
+                <Input
+                  id="transaction-amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={newTransaction.amount || ''}
+                  onChange={(e) =>
+                    setNewTransaction({ ...newTransaction, amount: Number(e.target.value) })
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="transaction-date">Date</Label>
-                <Input id="transaction-date" type="date" />
+                <Input
+                  id="transaction-date"
+                  type="date"
+                  value={newTransaction.date || ''}
+                  onChange={(e) => setNewTransaction({ ...newTransaction, date: e.target.value })}
+                />
               </div>
-              <Button className="w-full">Add Transaction</Button>
+              <Button className="w-full" type="button" onClick={handleAddTransaction}>
+                Add Transaction
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

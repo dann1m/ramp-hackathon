@@ -33,8 +33,10 @@ export default function Chatbot() {
     scrollToBottom();
   }, [messages]);
 
-  const callGeminiAgent = async (userMessage: string): Promise<string> => {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const callOpenAIAgent = async (userMessage: string): Promise<string> => {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    const model =
+      import.meta.env.VITE_OPENAI_MODEL || 'gpt-4.1-mini';
 
     if (!apiKey) {
       return "The AI agent isn't configured yet. Please set VITE_GEMINI_API_KEY in your environment so I can talk to Gemini.";
@@ -42,26 +44,27 @@ export default function Chatbot() {
 
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        'https://api.openai.com/v1/chat/completions',
         {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            contents: [
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: 'system',
+                content:
+                  'You are an AI assistant helping a student club officer manage events, budgets, analytics, and tasks in a dashboard app. Be concise, practical, and focused on club operations.',
+              },
               {
                 role: 'user',
-                parts: [
-                  {
-                    text:
-                      "You are an AI assistant helping a student club officer manage events, budgets, analytics, and tasks in a dashboard app. Be concise, practical, and focused on club operations.\n\nUser message: " +
-                      userMessage,
-                  },
-                ],
+                content: userMessage,
               },
             ],
-        }),
+          }),
         }
       );
 
@@ -75,7 +78,7 @@ export default function Chatbot() {
           errorDetail = await response.text();
         }
 
-        console.error('Gemini API error', errorDetail || response.statusText);
+        console.error('OpenAI API error', errorDetail || response.statusText);
         return (
           'The AI service returned an error: ' +
           (errorDetail || response.statusText || 'Unknown error.')
@@ -84,15 +87,12 @@ export default function Chatbot() {
 
       const data = await response.json();
       const content =
-        data.candidates?.[0]?.content?.parts
-          ?.map((p: { text?: string }) => p.text || '')
-          .join(' ')
-          .trim() ||
+        data.choices?.[0]?.message?.content?.trim() ||
         'Sorry, I could not generate a response.';
 
       return content;
     } catch (error) {
-      console.error('Gemini request failed', error);
+      console.error('OpenAI request failed', error);
       return 'Sorry, something went wrong while talking to the AI service.';
     }
   };
@@ -111,7 +111,7 @@ export default function Chatbot() {
     setIsLoading(true);
     setInputValue('');
 
-    const botText = await callGeminiAgent(userMessage.text);
+    const botText = await callOpenAIAgent(userMessage.text);
 
     const botMessage: Message = {
       id: Date.now() + 1,

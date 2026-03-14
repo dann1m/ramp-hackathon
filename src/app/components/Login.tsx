@@ -4,35 +4,65 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Label } from './ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { LayoutDashboard, UserCircle2 } from 'lucide-react'
+import { Input } from './ui/input'
+import { LayoutDashboard, UserCircle2, UserPlus } from 'lucide-react'
 import { useAuth } from './AuthContext'
 
-const teams = ['Marketing', 'Events', 'Finance', 'Outreach'] as const
-type Team = (typeof teams)[number]
-
-const presetUsers = [
-  { name: 'Sarah Chen', netId: 'sc1234', team: 'Marketing' as Team },
-  { name: 'Mike Johnson', netId: 'mj2345', team: 'Events' as Team },
-  { name: 'Alex Brown', netId: 'ab3456', team: 'Finance' as Team },
-  { name: 'Rachel Martinez', netId: 'rm4567', team: 'Outreach' as Team },
-]
+type Tab = 'login' | 'signup'
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, signup } = useAuth()
   const navigate = useNavigate()
 
-  const [selectedPreset, setSelectedPreset] = useState<string>('Sarah Chen')
+  const [tab, setTab] = useState<Tab>('login')
+
+  // Shared fields
+  const [name, setName] = useState('')
+  const [netId, setNetId] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [role, setRole] = useState<'officer' | 'member'>('officer')
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const resetForm = () => {
+    setName('')
+    setNetId('')
+    setPassword('')
+    setConfirmPassword('')
+    setRole('officer')
+    setError(null)
+  }
+
+  const switchTab = (next: Tab) => {
+    resetForm()
+    setTab(next)
+  }
+
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
-    const base = presetUsers.find((u) => u.name === selectedPreset) ?? presetUsers[0]
+    setError(null)
+    const result = login(netId, password)
+    if (!result.ok) {
+      setError(result.error ?? 'Login failed.')
+      return
+    }
+    navigate('/orgs', { replace: true })
+  }
 
-    login({
-      ...base,
-      role,
-    })
+  const handleSignup = (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
 
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+
+    const result = signup(name, netId, password, role)
+    if (!result.ok) {
+      setError(result.error ?? 'Sign up failed.')
+      return
+    }
     navigate('/orgs', { replace: true })
   }
 
@@ -49,68 +79,176 @@ export default function Login() {
               <CardTitle className="text-xl">ClubHub Board Portal</CardTitle>
             </div>
           </div>
-          <p className="text-sm text-slate-600">
-            Sign in as a board member or general member to access the club management dashboard.
-          </p>
+
+          {/* Tabs */}
+          <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+            <button
+              onClick={() => switchTab('login')}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                tab === 'login'
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                  : 'bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => switchTab('signup')}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                tab === 'signup'
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                  : 'bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              Create Account
+            </button>
+          </div>
         </CardHeader>
+
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label>Who are you?</Label>
-              <Select value={selectedPreset} onValueChange={setSelectedPreset}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Select a user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {presetUsers.map((user) => (
-                    <SelectItem key={user.netId} value={user.name}>
+          {/* ── LOGIN ── */}
+          {tab === 'login' && (
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="netId">NetID</Label>
+                <Input
+                  id="netId"
+                  value={netId}
+                  onChange={(e) => setNetId(e.target.value)}
+                  placeholder="Enter your NetID"
+                  autoComplete="username"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                />
+              </div>
+
+              {error && <p className="text-sm text-red-500">{error}</p>}
+
+              <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600">
+                <UserCircle2 className="w-4 h-4 mr-2" />
+                Sign In
+              </Button>
+
+              <p className="text-center text-xs text-slate-500">
+                No account yet?{' '}
+                <button
+                  type="button"
+                  onClick={() => switchTab('signup')}
+                  className="text-blue-600 hover:underline"
+                >
+                  Create one
+                </button>
+              </p>
+            </form>
+          )}
+
+          {/* ── SIGN UP ── */}
+          {tab === 'signup' && (
+            <form onSubmit={handleSignup} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="su-name">Full Name</Label>
+                <Input
+                  id="su-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your full name"
+                  autoComplete="name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="su-netId">NetID</Label>
+                <Input
+                  id="su-netId"
+                  value={netId}
+                  onChange={(e) => setNetId(e.target.value)}
+                  placeholder="Enter your NetID"
+                  autoComplete="username"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="su-password">Password</Label>
+                <Input
+                  id="su-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="su-confirm">Confirm Password</Label>
+                <Input
+                  id="su-confirm"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter your password"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Select value={role} onValueChange={(v) => setRole(v as 'officer' | 'member')}>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="officer">
                       <div className="flex flex-col">
-                        <span className="font-medium">{user.name}</span>
+                        <span className="font-medium">Officer</span>
                         <span className="text-xs text-slate-500">
-                          {user.netId} • {user.team}
+                          Full access: manage tasks, events, budget, and analytics.
                         </span>
                       </div>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                    <SelectItem value="member">
+                      <div className="flex flex-col">
+                        <span className="font-medium">Member</span>
+                        <span className="text-xs text-slate-500">
+                          Read-only: view events and dashboard.
+                        </span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Select value={role} onValueChange={(value) => setRole(value as 'officer' | 'member')}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="officer">
-                    <div className="flex flex-col">
-                      <span className="font-medium">Officer</span>
-                      <span className="text-xs text-slate-500">
-                        Full access: can manage tasks, events, budget, and analytics.
-                      </span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="member">
-                    <div className="flex flex-col">
-                      <span className="font-medium">Member</span>
-                      <span className="text-xs text-slate-500">
-                        Read-only: can view events and dashboard, limited access elsewhere.
-                      </span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              {error && <p className="text-sm text-red-500">{error}</p>}
 
-            <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600">
-              <UserCircle2 className="w-4 h-4 mr-2" />
-              Continue to dashboard
-            </Button>
-          </form>
+              <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Create Account
+              </Button>
+
+              <p className="text-center text-xs text-slate-500">
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => switchTab('login')}
+                  className="text-blue-600 hover:underline"
+                >
+                  Sign in
+                </button>
+              </p>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
   )
 }
-

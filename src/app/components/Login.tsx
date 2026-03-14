@@ -72,8 +72,8 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
-              <img src={logo} alt="ClubHub logo" className="h-full w-full object-cover" />
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
+              <img src={logo} alt="ClubHub logo" className="h-full w-full scale-125 object-cover" />
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Welcome to</p>

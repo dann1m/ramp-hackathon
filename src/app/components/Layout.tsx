@@ -12,103 +12,92 @@ export default function Layout() {
   const isOfficer = user?.role === 'officer'
 
   const navItems = [
-    { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-    // Officers see full navigation, members only see read-only pages
+    { to: '/app', label: 'Dashboard', icon: LayoutDashboard, end: true },
     ...(isOfficer
       ? [
-          { to: '/tasks', label: 'Tasks', icon: CheckSquare },
-          { to: '/events', label: 'Events', icon: Calendar },
-          { to: '/budget', label: 'Budget', icon: DollarSign },
-          { to: '/analytics', label: 'Analytics', icon: TrendingUp },
+          { to: '/app/tasks', label: 'Tasks', icon: CheckSquare },
+          { to: '/app/events', label: 'Events', icon: Calendar },
+          { to: '/app/budget', label: 'Budget', icon: DollarSign },
+          { to: '/app/analytics', label: 'Analytics', icon: TrendingUp },
         ]
-      : [
-          { to: '/events', label: 'Events', icon: Calendar },
-        ]),
+      : [{ to: '/app/events', label: 'Events', icon: Calendar }]),
   ]
 
   const handleLogout = () => {
     logout()
-    navigate('/login', { replace: true })
+    navigate('/', { replace: true })
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <LayoutDashboard className="w-6 h-6 text-white" />
-              </div>
-              <div>
-              <h1 className="font-semibold text-slate-900 flex items-center gap-2">
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90">
+        <div className="mx-auto flex h-auto w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <LayoutDashboard className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="flex items-center gap-2 text-base text-foreground">
                 ClubHub
                 {currentOrg && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
-                    <Building2 className="w-3 h-3" />
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                    <Building2 className="h-3 w-3" />
                     {currentOrg.name}
                   </span>
                 )}
               </h1>
-                <p className="text-xs text-slate-500">Board Management</p>
-              </div>
+              <p className="text-xs text-muted-foreground">Board management for Cornell clubs</p>
             </div>
-            
-            <div className="flex items-center gap-4">
-              <nav className="flex gap-1">
-                {navItems.map(({ to, label, icon: Icon, end }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    end={end}
-                    className={({ isActive }) =>
-                      `flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-slate-600 hover:bg-slate-100'
-                      }`
-                    }
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="hidden sm:inline">{label}</span>
-                  </NavLink>
-                ))}
-              </nav>
+          </div>
 
-              {/* User Profile */}
-              {user && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg">
-                  <UserCircle className="w-5 h-5 text-slate-600" />
-                  <div className="hidden md:block text-left">
-                    <p className="text-xs font-medium text-slate-900">
-                      {user.name}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {user.netId} • {user.team} • {isOfficer ? 'Officer' : 'Member'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="ml-1 inline-flex items-center justify-center rounded-md p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors"
-                    aria-label="Sign out"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+            <nav className="flex flex-wrap items-center gap-1 rounded-2xl bg-card p-1 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+              {navItems.map(({ to, label, icon: Icon, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 rounded-xl px-4 py-2 text-sm transition-all duration-200 ease-in-out ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.06)]'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`
+                  }
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{label}</span>
+                </NavLink>
+              ))}
+            </nav>
+
+            {user && (
+              <div className="flex items-center gap-2 rounded-2xl bg-card px-3 py-2 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                <UserCircle className="h-5 w-5 text-muted-foreground" />
+                <div className="hidden text-left md:block">
+                  <p className="text-xs font-medium text-foreground">{user.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {user.netId} • {user.team} • {isOfficer ? 'Officer' : 'Member'}
+                  </p>
                 </div>
-              )}
-            </div>
+                <button
+                  onClick={handleLogout}
+                  className="ml-1 inline-flex items-center justify-center rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  aria-label="Sign out"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <Outlet />
       </main>
 
-      {/* Chatbot */}
       <Chatbot />
     </div>
-  );
+  )
 }

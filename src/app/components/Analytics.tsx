@@ -4,11 +4,34 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { TrendingUp, TrendingDown, DollarSign, Users, Calendar, Trophy, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { useOrgs } from './OrgContext';
+import { DEMO_ORG_ID } from '../data/demoClub';
 
 type TimePeriod = 'day' | 'month' | 'year';
 
 export default function Analytics() {
+  const { currentOrg } = useOrgs();
+  const isDemoOrg = currentOrg?.id === DEMO_ORG_ID;
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('month');
+
+  if (!isDemoOrg) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-semibold text-slate-900">Analytics & Insights</h2>
+          <p className="text-slate-600 mt-1">Visualize event performance and financial metrics</p>
+        </div>
+        <Card>
+          <CardContent className="p-10 text-center">
+            <p className="text-slate-700 font-medium">No analytics data yet for this organization.</p>
+            <p className="text-sm text-slate-500 mt-2">
+              Add completed events with attendance and budget transactions to generate insights.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Event ROI Data with dates and attendance
   const eventROIData = [

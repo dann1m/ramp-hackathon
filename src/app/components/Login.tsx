@@ -67,37 +67,37 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center px-4">
-      <Card className="w-full max-w-md shadow-lg border-slate-200">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <Card className="w-full max-w-md">
         <CardHeader className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-              <LayoutDashboard className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <LayoutDashboard className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">Welcome to</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Welcome to</p>
               <CardTitle className="text-xl">ClubHub Board Portal</CardTitle>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+          <div className="flex rounded-xl bg-muted p-1 overflow-hidden">
             <button
               onClick={() => switchTab('login')}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+              className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
                 tab === 'login'
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                  : 'bg-white text-slate-600 hover:bg-slate-50'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-background'
               }`}
             >
               Sign In
             </button>
             <button
               onClick={() => switchTab('signup')}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+              className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
                 tab === 'signup'
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                  : 'bg-white text-slate-600 hover:bg-slate-50'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-background'
               }`}
             >
               Create Account
@@ -132,19 +132,19 @@ export default function Login() {
                 />
               </div>
 
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && <p className="text-sm text-destructive">{error}</p>}
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600">
+              <Button type="submit" className="w-full">
                 <UserCircle2 className="w-4 h-4 mr-2" />
                 Sign In
               </Button>
 
-              <p className="text-center text-xs text-slate-500">
+              <p className="text-center text-xs text-muted-foreground">
                 No account yet?{' '}
                 <button
                   type="button"
                   onClick={() => switchTab('signup')}
-                  className="text-blue-600 hover:underline"
+                  className="text-primary hover:underline"
                 >
                   Create one
                 </button>
@@ -211,7 +211,7 @@ export default function Login() {
                     <SelectItem value="officer">
                       <div className="flex flex-col">
                         <span className="font-medium">Officer</span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-muted-foreground">
                           Full access: manage tasks, events, budget, and analytics.
                         </span>
                       </div>
@@ -219,7 +219,7 @@ export default function Login() {
                     <SelectItem value="member">
                       <div className="flex flex-col">
                         <span className="font-medium">Member</span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-muted-foreground">
                           Read-only: view events and dashboard.
                         </span>
                       </div>
@@ -228,19 +228,19 @@ export default function Login() {
                 </Select>
               </div>
 
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && <p className="text-sm text-destructive">{error}</p>}
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600">
+              <Button type="submit" className="w-full">
                 <UserPlus className="w-4 h-4 mr-2" />
                 Create Account
               </Button>
 
-              <p className="text-center text-xs text-slate-500">
+              <p className="text-center text-xs text-muted-foreground">
                 Already have an account?{' '}
                 <button
                   type="button"
                   onClick={() => switchTab('login')}
-                  className="text-blue-600 hover:underline"
+                  className="text-primary hover:underline"
                 >
                   Sign in
                 </button>

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useAuth } from './AuthContext'
+import { DEMO_ORG_ID, DEMO_ORG_NAME } from '../data/demoClub'
 
 export interface OrgMember {
   netId: string
@@ -40,6 +41,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const [orgsByUser, setOrgsByUser] = useState<Record<string, Organization[]>>({})
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null)
+  const [isHydrated, setIsHydrated] = useState(false)
 
   // Load all org data from localStorage once
   useEffect(() => {
@@ -58,6 +60,8 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {
       // ignore
+    } finally {
+      setIsHydrated(true)
     }
   }, [])
 
@@ -87,6 +91,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
   // Persist org data + per-user currentOrg mapping
   useEffect(() => {
     if (typeof window === 'undefined') return
+    if (!isHydrated) return
     try {
       const raw = window.localStorage.getItem('clubhub-organizations')
       const prev = raw
@@ -111,7 +116,43 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // ignore
     }
-  }, [orgsByUser, currentOrgId, user?.netId])
+  }, [orgsByUser, currentOrgId, user?.netId, isHydrated])
+
+  useEffect(() => {
+    if (!isHydrated || !user?.netId) return
+
+    setOrgsByUser((prev) => {
+      const userOrgs = prev[user.netId] || []
+      if (userOrgs.some((org) => org.id === DEMO_ORG_ID)) return prev
+
+      const demoOrg: Organization = {
+        id: DEMO_ORG_ID,
+        name: DEMO_ORG_NAME,
+        createdAt: '2026-03-14T09:00:00.000Z',
+        ownerNetId: user.netId,
+        teams: [
+          { id: `${DEMO_ORG_ID}-team-marketing`, name: 'Marketing' },
+          { id: `${DEMO_ORG_ID}-team-events`, name: 'Events' },
+          { id: `${DEMO_ORG_ID}-team-finance`, name: 'Finance' },
+        ],
+        members: [
+          {
+            netId: user.netId,
+            role: user.role,
+            teamId: `${DEMO_ORG_ID}-team-marketing`,
+          },
+        ],
+        inviteCode: 'INV-DUCKS1',
+      }
+
+      return {
+        ...prev,
+        [user.netId]: [demoOrg, ...userOrgs],
+      }
+    })
+
+    setCurrentOrgId((prev) => prev ?? DEMO_ORG_ID)
+  }, [isHydrated, user?.netId, user?.role])
 
   const organizations = useMemo(() => {
     if (!user?.netId) return []
@@ -317,4 +358,3 @@ export function useOrgs() {
   }
   return ctx
 }
-

@@ -134,10 +134,10 @@ export default function Chatbot() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 z-50"
+          className="fixed bottom-6 right-6 rounded-full bg-primary p-4 text-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-200 ease-in-out hover:-translate-y-0.5 z-50"
         >
           <MessageCircle className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs">
             <Sparkles className="w-3 h-3" />
           </span>
         </button>
@@ -145,29 +145,29 @@ export default function Chatbot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-[600px] shadow-2xl rounded-lg overflow-hidden z-50 flex flex-col bg-white border border-slate-200">
+        <div className="fixed bottom-6 right-6 z-50 flex h-[600px] w-96 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
           {/* Header */}
-          <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 flex items-center justify-between">
+          <div className="flex items-center justify-between bg-primary p-4 text-white">
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-2 rounded-lg">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="font-semibold">Club Assistant</h3>
-                <p className="text-xs text-purple-100">Always here to help</p>
+                <p className="text-xs text-white/80">Always here to help</p>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="hover:bg-white/20 p-2 rounded-lg transition-colors"
+              className="rounded-lg p-2 transition-colors hover:bg-white/20"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-slate-50 p-3 border-b border-slate-200">
-            <p className="text-xs text-slate-600 mb-2">Quick actions:</p>
+          <div className="border-b border-border bg-muted p-3">
+            <p className="mb-2 text-xs text-muted-foreground">Quick actions:</p>
             <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
@@ -200,23 +200,23 @@ export default function Chatbot() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+          <div className="flex-1 space-y-4 overflow-y-auto bg-muted p-4">
             {messages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
+                  className={`max-w-[80%] rounded-xl p-3 ${
                     message.sender === 'user'
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
-                      : 'bg-white text-slate-900 border border-slate-200'
+                      ? 'bg-primary text-white'
+                      : 'border border-border bg-card text-foreground'
                   }`}
                 >
                   <p className="text-sm whitespace-pre-line">{message.text}</p>
                   <p
                     className={`text-xs mt-1 ${
-                      message.sender === 'user' ? 'text-purple-100' : 'text-slate-500'
+                      message.sender === 'user' ? 'text-white/80' : 'text-muted-foreground'
                     }`}
                   >
                     {message.timestamp.toLocaleTimeString('en-US', {
@@ -229,7 +229,7 @@ export default function Chatbot() {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-lg p-3 bg-white text-slate-500 border border-slate-200 text-sm italic">
+                <div className="max-w-[80%] rounded-xl border border-border bg-card p-3 text-sm italic text-muted-foreground">
                   Thinking…
                 </div>
               </div>
@@ -238,7 +238,7 @@ export default function Chatbot() {
           </div>
 
           {/* Input */}
-          <div className="p-4 bg-white border-t border-slate-200">
+          <div className="border-t border-border bg-card p-4">
             <div className="flex gap-2">
               <Input
                 value={inputValue}
@@ -251,7 +251,7 @@ export default function Chatbot() {
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || isLoading}
                 size="icon"
-                className="bg-gradient-to-r from-purple-600 to-blue-600"
+                className="bg-primary"
               >
                 <Send className="w-4 h-4" />
               </Button>

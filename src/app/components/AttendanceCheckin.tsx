@@ -97,7 +97,7 @@ export default function AttendanceCheckin() {
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <p className="text-slate-600 mb-4">Event not found</p>
-            <Button onClick={() => navigate('/')}>Return to Dashboard</Button>
+            <Button onClick={() => navigate('/app')}>Return to Dashboard</Button>
           </CardContent>
         </Card>
       </div>
@@ -216,7 +216,7 @@ export default function AttendanceCheckin() {
 
           <div className="mt-6 pt-6 border-t">
             <button
-              onClick={() => navigate('/events')}
+              onClick={() => navigate('/app/events')}
               className="text-sm text-slate-600 hover:text-slate-900 flex items-center gap-1 mx-auto"
             >
               <ArrowLeft className="w-4 h-4" />

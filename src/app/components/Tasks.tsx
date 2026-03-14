@@ -10,6 +10,8 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import confetti from 'canvas-confetti';
 import { useAuth } from './AuthContext';
+import { useOrgs } from './OrgContext';
+import { cloneDemoTasks, DEMO_ORG_ID } from '../data/demoClub';
 
 interface Task {
   id: number;
@@ -42,104 +44,18 @@ const boardMembers = [
   'Tom Anderson'
 ];
 
-const STORAGE_KEY = 'clubhub-tasks';
-
-const defaultTasks: Task[] = [
-  {
-    id: 1,
-    title: 'Design Spring Fundraiser Flyers',
-    description: 'Create promotional materials for the upcoming fundraiser event',
-    assignee: 'Sarah Chen',
-    dueDate: '2026-03-18',
-    priority: 'High',
-    status: 'In Progress',
-    category: 'Marketing',
-    team: 'Marketing',
-  },
-  {
-    id: 2,
-    title: 'Book Venue for Networking Mixer',
-    description: 'Research and secure venue for March 28th event',
-    assignee: 'Mike Johnson',
-    dueDate: '2026-03-16',
-    priority: 'High',
-    status: 'To Do',
-    category: 'Events',
-    team: 'Events',
-  },
-  {
-    id: 3,
-    title: 'Update Club Website',
-    description: 'Add recent event photos and update member directory',
-    assignee: 'Emma Davis',
-    dueDate: '2026-03-20',
-    priority: 'Medium',
-    status: 'In Progress',
-    category: 'Communications',
-    team: 'Marketing',
-  },
-  {
-    id: 4,
-    title: 'Review Sponsorship Proposals',
-    description: 'Evaluate three potential sponsors for Spring Fundraiser',
-    assignee: 'Alex Brown',
-    dueDate: '2026-03-17',
-    priority: 'High',
-    status: 'To Do',
-    category: 'Finance',
-    team: 'Finance',
-  },
-  {
-    id: 5,
-    title: 'Plan Community Outreach',
-    description: 'Develop strategy for April community service project',
-    assignee: 'Jessica Lee',
-    dueDate: '2026-03-25',
-    priority: 'Medium',
-    status: 'To Do',
-    category: 'Outreach',
-    team: 'Events',
-  },
-  {
-    id: 6,
-    title: 'Send Thank You Notes',
-    description: 'Write thank you notes to last event sponsors',
-    assignee: 'Rachel Martinez',
-    dueDate: '2026-03-15',
-    priority: 'Low',
-    status: 'Completed',
-    category: 'Relations',
-    team: 'Outreach',
-  },
-  {
-    id: 7,
-    title: 'Create Social Media Content Calendar',
-    description: 'Plan Instagram and Facebook posts for next month',
-    assignee: 'Sarah Chen',
-    dueDate: '2026-03-22',
-    priority: 'Medium',
-    status: 'To Do',
-    category: 'Marketing',
-    team: 'Marketing',
-  },
-];
+const getTasksStorageKey = (orgId: string) => `clubhub-tasks:${orgId}`;
 
 export default function Tasks() {
   const { user } = useAuth();
+  const { currentOrg } = useOrgs();
 
   const currentUser = user?.name ?? 'Sarah Chen';
   const currentUserTeam =
     Object.entries(teams).find(([, members]) => members.includes(currentUser))?.[0] || '';
 
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    if (typeof window === 'undefined') return defaultTasks;
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      return stored ? (JSON.parse(stored) as Task[]) : defaultTasks;
-    } catch {
-      return defaultTasks;
-    }
-  });
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isTasksLoaded, setIsTasksLoaded] = useState(false);
 
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterAssignee, setFilterAssignee] = useState<string>('all');
@@ -158,12 +74,35 @@ export default function Tasks() {
   });
 
   useEffect(() => {
+    if (!currentOrg?.id) {
+      setTasks([]);
+      setIsTasksLoaded(true);
+      return;
+    }
+
+    setIsTasksLoaded(false);
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      const stored = window.localStorage.getItem(getTasksStorageKey(currentOrg.id));
+      if (stored) {
+        setTasks(JSON.parse(stored) as Task[]);
+      } else {
+        setTasks(currentOrg.id === DEMO_ORG_ID ? (cloneDemoTasks() as Task[]) : []);
+      }
+    } catch {
+      setTasks(currentOrg.id === DEMO_ORG_ID ? (cloneDemoTasks() as Task[]) : []);
+    } finally {
+      setIsTasksLoaded(true);
+    }
+  }, [currentOrg?.id]);
+
+  useEffect(() => {
+    if (!currentOrg?.id || !isTasksLoaded) return;
+    try {
+      window.localStorage.setItem(getTasksStorageKey(currentOrg.id), JSON.stringify(tasks));
     } catch {
       // ignore
     }
-  }, [tasks]);
+  }, [tasks, currentOrg?.id, isTasksLoaded]);
 
   const toggleTaskStatus = (taskId: number) => {
     setTasks(tasks.map(task => {

@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { useOrgs } from './OrgContext';
+import { cloneDemoBudgetCategories, cloneDemoTransactions, DEMO_ORG_ID } from '../data/demoClub';
 
 interface BudgetCategory {
   id: number;
@@ -26,83 +28,43 @@ interface Transaction {
   type: 'expense' | 'income';
 }
 
-const CATEGORIES_STORAGE_KEY = 'clubhub-budget-categories';
-const TRANSACTIONS_STORAGE_KEY = 'clubhub-budget-transactions';
+const getBudgetCategoriesStorageKey = (orgId: string) => `clubhub-budget-categories:${orgId}`;
+const getBudgetTransactionsStorageKey = (orgId: string) => `clubhub-budget-transactions:${orgId}`;
 
 export default function Budget() {
-  const totalBudget = 6500;
+  const { currentOrg } = useOrgs();
 
   const [categories, setCategories] = useState<BudgetCategory[]>(() => {
-    if (typeof window === 'undefined')
-      return [
-    { id: 1, name: 'Events', allocated: 3000, spent: 2150, color: 'bg-blue-500' },
-    { id: 2, name: 'Marketing', allocated: 1200, spent: 850, color: 'bg-purple-500' },
-    { id: 3, name: 'Operations', allocated: 800, spent: 650, color: 'bg-green-500' },
-    { id: 4, name: 'Outreach', allocated: 900, spent: 400, color: 'bg-orange-500' },
-    { id: 5, name: 'Technology', allocated: 600, spent: 200, color: 'bg-pink-500' },
-  ];
-
+    if (typeof window === 'undefined' || !currentOrg?.id) return [];
     try {
-      const stored = window.localStorage.getItem(CATEGORIES_STORAGE_KEY);
-      return stored ? (JSON.parse(stored) as BudgetCategory[]) : [
-        { id: 1, name: 'Events', allocated: 3000, spent: 2150, color: 'bg-blue-500' },
-        { id: 2, name: 'Marketing', allocated: 1200, spent: 850, color: 'bg-purple-500' },
-        { id: 3, name: 'Operations', allocated: 800, spent: 650, color: 'bg-green-500' },
-        { id: 4, name: 'Outreach', allocated: 900, spent: 400, color: 'bg-orange-500' },
-        { id: 5, name: 'Technology', allocated: 600, spent: 200, color: 'bg-pink-500' },
-      ];
+      const stored = window.localStorage.getItem(getBudgetCategoriesStorageKey(currentOrg.id));
+      if (stored) return JSON.parse(stored) as BudgetCategory[];
+      return currentOrg.id === DEMO_ORG_ID ? (cloneDemoBudgetCategories() as BudgetCategory[]) : [];
     } catch {
-      return [
-        { id: 1, name: 'Events', allocated: 3000, spent: 2150, color: 'bg-blue-500' },
-        { id: 2, name: 'Marketing', allocated: 1200, spent: 850, color: 'bg-purple-500' },
-        { id: 3, name: 'Operations', allocated: 800, spent: 650, color: 'bg-green-500' },
-        { id: 4, name: 'Outreach', allocated: 900, spent: 400, color: 'bg-orange-500' },
-        { id: 5, name: 'Technology', allocated: 600, spent: 200, color: 'bg-pink-500' },
-      ];
+      return currentOrg.id === DEMO_ORG_ID ? (cloneDemoBudgetCategories() as BudgetCategory[]) : [];
     }
   });
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    if (typeof window === 'undefined')
-      return [
-    { id: 1, category: 'Events', description: 'Winter Gala Venue Deposit', amount: -1200, date: '2026-03-10', type: 'expense' },
-    { id: 2, category: 'Marketing', description: 'Social Media Ads', amount: -350, date: '2026-03-12', type: 'expense' },
-    { id: 3, category: 'Events', description: 'Sponsorship - Tech Corp', amount: 1500, date: '2026-03-08', type: 'income' },
-    { id: 4, category: 'Operations', description: 'Office Supplies', amount: -125, date: '2026-03-11', type: 'expense' },
-    { id: 5, category: 'Marketing', description: 'Print Materials', amount: -275, date: '2026-03-09', type: 'expense' },
-    { id: 6, category: 'Outreach', description: 'Community Event Supplies', amount: -180, date: '2026-03-13', type: 'expense' },
-    { id: 7, category: 'Events', description: 'February Mixer Catering', amount: -450, date: '2026-02-15', type: 'expense' },
-    { id: 8, category: 'Marketing', description: 'January Campaign', amount: -225, date: '2026-01-20', type: 'expense' },
-    { id: 9, category: 'Events', description: 'January Alumni Dinner', amount: -950, date: '2026-01-28', type: 'expense' },
-    { id: 10, category: 'Technology', description: 'Website Hosting (Feb)', amount: -50, date: '2026-02-01', type: 'expense' },
-    { id: 11, category: 'Operations', description: 'February Office Rent', amount: -300, date: '2026-02-01', type: 'expense' },
-  ];
-
+    if (typeof window === 'undefined' || !currentOrg?.id) return [];
     try {
-      const stored = window.localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
-      return stored ? (JSON.parse(stored) as Transaction[]) : [
-        { id: 1, category: 'Events', description: 'Winter Gala Venue Deposit', amount: -1200, date: '2026-03-10', type: 'expense' },
-        { id: 2, category: 'Marketing', description: 'Social Media Ads', amount: -350, date: '2026-03-12', type: 'expense' },
-        { id: 3, category: 'Events', description: 'Sponsorship - Tech Corp', amount: 1500, date: '2026-03-08', type: 'income' },
-        { id: 4, category: 'Operations', description: 'Office Supplies', amount: -125, date: '2026-03-11', type: 'expense' },
-        { id: 5, category: 'Marketing', description: 'Print Materials', amount: -275, date: '2026-03-09', type: 'expense' },
-        { id: 6, category: 'Outreach', description: 'Community Event Supplies', amount: -180, date: '2026-03-13', type: 'expense' },
-        { id: 7, category: 'Events', description: 'February Mixer Catering', amount: -450, date: '2026-02-15', type: 'expense' },
-        { id: 8, category: 'Marketing', description: 'January Campaign', amount: -225, date: '2026-01-20', type: 'expense' },
-        { id: 9, category: 'Events', description: 'January Alumni Dinner', amount: -950, date: '2026-01-28', type: 'expense' },
-        { id: 10, category: 'Technology', description: 'Website Hosting (Feb)', amount: -50, date: '2026-02-01', type: 'expense' },
-        { id: 11, category: 'Operations', description: 'February Office Rent', amount: -300, date: '2026-02-01', type: 'expense' },
-      ];
+      const stored = window.localStorage.getItem(getBudgetTransactionsStorageKey(currentOrg.id));
+      if (stored) return JSON.parse(stored) as Transaction[];
+      return currentOrg.id === DEMO_ORG_ID ? (cloneDemoTransactions() as Transaction[]) : [];
     } catch {
-      return [
-        { id: 1, category: 'Events', description: 'Winter Gala Venue Deposit', amount: -1200, date: '2026-03-10', type: 'expense' },
-        { id: 2, category: 'Marketing', description: 'Social Media Ads', amount: -350, date: '2026-03-12', type: 'expense' },
-      ];
+      return currentOrg.id === DEMO_ORG_ID ? (cloneDemoTransactions() as Transaction[]) : [];
     }
   });
+  const [isBudgetLoaded, setIsBudgetLoaded] = useState(false);
 
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [newCategory, setNewCategory] = useState<{ name: string; allocated: number; color: string }>({
+    name: '',
+    allocated: 0,
+    color: 'bg-blue-500',
+  });
 
   const [newTransaction, setNewTransaction] = useState<Partial<Transaction>>({
     type: 'expense',
@@ -110,25 +72,64 @@ export default function Budget() {
   });
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
-    } catch {
-      // ignore
+    if (!currentOrg?.id) {
+      setCategories([]);
+      setTransactions([]);
+      setSelectedMonth('all');
+      setIsBudgetLoaded(true);
+      return;
     }
-  }, [categories]);
+
+    setIsBudgetLoaded(false);
+    setSelectedMonth('all');
+    try {
+      const storedCategories = window.localStorage.getItem(getBudgetCategoriesStorageKey(currentOrg.id));
+      const storedTransactions = window.localStorage.getItem(getBudgetTransactionsStorageKey(currentOrg.id));
+
+      setCategories(
+        storedCategories
+          ? (JSON.parse(storedCategories) as BudgetCategory[])
+          : currentOrg.id === DEMO_ORG_ID
+            ? (cloneDemoBudgetCategories() as BudgetCategory[])
+            : [],
+      );
+      setTransactions(
+        storedTransactions
+          ? (JSON.parse(storedTransactions) as Transaction[])
+          : currentOrg.id === DEMO_ORG_ID
+            ? (cloneDemoTransactions() as Transaction[])
+            : [],
+      );
+    } catch {
+      setCategories(currentOrg.id === DEMO_ORG_ID ? (cloneDemoBudgetCategories() as BudgetCategory[]) : []);
+      setTransactions(currentOrg.id === DEMO_ORG_ID ? (cloneDemoTransactions() as Transaction[]) : []);
+    } finally {
+      setIsBudgetLoaded(true);
+    }
+  }, [currentOrg?.id]);
 
   useEffect(() => {
+    if (!currentOrg?.id || !isBudgetLoaded) return;
     try {
-      window.localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(transactions));
+      window.localStorage.setItem(getBudgetCategoriesStorageKey(currentOrg.id), JSON.stringify(categories));
     } catch {
       // ignore
     }
-  }, [transactions]);
+  }, [categories, currentOrg?.id, isBudgetLoaded]);
+
+  useEffect(() => {
+    if (!currentOrg?.id || !isBudgetLoaded) return;
+    try {
+      window.localStorage.setItem(getBudgetTransactionsStorageKey(currentOrg.id), JSON.stringify(transactions));
+    } catch {
+      // ignore
+    }
+  }, [transactions, currentOrg?.id, isBudgetLoaded]);
 
   const totalAllocated = categories.reduce((sum, cat) => sum + cat.allocated, 0);
   const totalSpent = categories.reduce((sum, cat) => sum + cat.spent, 0);
   const remainingBudget = totalAllocated - totalSpent;
-  const budgetUsagePercent = (totalSpent / totalAllocated) * 100;
+  const budgetUsagePercent = totalAllocated > 0 ? (totalSpent / totalAllocated) * 100 : 0;
 
   // Filter transactions by month
   const filteredTransactions = useMemo(
@@ -168,6 +169,11 @@ export default function Budget() {
           .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
   const handleAddTransaction = () => {
+    if (categories.length === 0) {
+      alert('Please create at least one budget category before adding a transaction.');
+      return;
+    }
+
     if (!newTransaction.category || !newTransaction.amount || !newTransaction.date || !newTransaction.type) {
       alert('Please fill in type, category, amount, and date.');
       return;
@@ -215,6 +221,36 @@ export default function Budget() {
     });
   };
 
+  const handleAddCategory = () => {
+    const trimmedName = newCategory.name.trim();
+    if (!trimmedName) {
+      alert('Please enter a category name.');
+      return;
+    }
+
+    if (!Number.isFinite(newCategory.allocated) || newCategory.allocated <= 0) {
+      alert('Allocated budget must be greater than 0.');
+      return;
+    }
+
+    if (categories.some((c) => c.name.toLowerCase() === trimmedName.toLowerCase())) {
+      alert('A category with this name already exists.');
+      return;
+    }
+
+    const nextCategory: BudgetCategory = {
+      id: categories.length ? Math.max(...categories.map((c) => c.id)) + 1 : 1,
+      name: trimmedName,
+      allocated: Number(newCategory.allocated),
+      spent: 0,
+      color: newCategory.color,
+    };
+
+    setCategories((prev) => [...prev, nextCategory]);
+    setNewCategory({ name: '', allocated: 0, color: 'bg-blue-500' });
+    setIsCategoryDialogOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -223,87 +259,156 @@ export default function Budget() {
           <h2 className="text-3xl font-semibold text-slate-900">Budget Management</h2>
           <p className="text-slate-600 mt-1">Track spending and allocations across categories</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Transaction
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Transaction</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="transaction-type">Type</Label>
-                <Select
-                  value={newTransaction.type}
-                  onValueChange={(value) =>
-                    setNewTransaction({ ...newTransaction, type: value as 'expense' | 'income' })
-                  }
-                >
-                  <SelectTrigger id="transaction-type">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="expense">Expense</SelectItem>
-                    <SelectItem value="income">Income</SelectItem>
-                  </SelectContent>
-                </Select>
+        <div className="flex items-center gap-2">
+          <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Category
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Budget Category</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category-name">Category name</Label>
+                  <Input
+                    id="category-name"
+                    placeholder="e.g., Events"
+                    value={newCategory.name}
+                    onChange={(e) => setNewCategory((prev) => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category-allocated">Allocated budget ($)</Label>
+                  <Input
+                    id="category-allocated"
+                    type="number"
+                    min="1"
+                    placeholder="1000"
+                    value={newCategory.allocated || ''}
+                    onChange={(e) =>
+                      setNewCategory((prev) => ({ ...prev, allocated: Number(e.target.value) }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category-color">Color tag</Label>
+                  <Select
+                    value={newCategory.color}
+                    onValueChange={(value) => setNewCategory((prev) => ({ ...prev, color: value }))}
+                  >
+                    <SelectTrigger id="category-color">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bg-blue-500">Blue</SelectItem>
+                      <SelectItem value="bg-purple-500">Purple</SelectItem>
+                      <SelectItem value="bg-green-500">Green</SelectItem>
+                      <SelectItem value="bg-orange-500">Orange</SelectItem>
+                      <SelectItem value="bg-pink-500">Pink</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button className="w-full" type="button" onClick={handleAddCategory}>
+                  Save Category
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="transaction-category">Category</Label>
-                <Select
-                  value={newTransaction.category}
-                  onValueChange={(value) => setNewTransaction({ ...newTransaction, category: value })}
-                >
-                  <SelectTrigger id="transaction-category">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map(cat => (
-                      <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="transaction-description">Description</Label>
-                <Input
-                  id="transaction-description"
-                  placeholder="Enter description"
-                  value={newTransaction.description || ''}
-                  onChange={(e) => setNewTransaction({ ...newTransaction, description: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="transaction-amount">Amount ($)</Label>
-                <Input
-                  id="transaction-amount"
-                  type="number"
-                  placeholder="0.00"
-                  value={newTransaction.amount || ''}
-                  onChange={(e) =>
-                    setNewTransaction({ ...newTransaction, amount: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="transaction-date">Date</Label>
-                <Input
-                  id="transaction-date"
-                  type="date"
-                  value={newTransaction.date || ''}
-                  onChange={(e) => setNewTransaction({ ...newTransaction, date: e.target.value })}
-                />
-              </div>
-              <Button className="w-full" type="button" onClick={handleAddTransaction}>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button disabled={categories.length === 0}>
+                <Plus className="w-4 h-4 mr-2" />
                 Add Transaction
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Transaction</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                {categories.length === 0 ? (
+                  <p className="text-sm text-slate-600">
+                    Create at least one budget category first.
+                  </p>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="transaction-type">Type</Label>
+                      <Select
+                        value={newTransaction.type}
+                        onValueChange={(value) =>
+                          setNewTransaction({ ...newTransaction, type: value as 'expense' | 'income' })
+                        }
+                      >
+                        <SelectTrigger id="transaction-type">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="expense">Expense</SelectItem>
+                          <SelectItem value="income">Income</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="transaction-category">Category</Label>
+                      <Select
+                        value={newTransaction.category}
+                        onValueChange={(value) => setNewTransaction({ ...newTransaction, category: value })}
+                      >
+                        <SelectTrigger id="transaction-category">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map(cat => (
+                            <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="transaction-description">Description</Label>
+                      <Input
+                        id="transaction-description"
+                        placeholder="Enter description"
+                        value={newTransaction.description || ''}
+                        onChange={(e) => setNewTransaction({ ...newTransaction, description: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="transaction-amount">Amount ($)</Label>
+                      <Input
+                        id="transaction-amount"
+                        type="number"
+                        placeholder="0.00"
+                        value={newTransaction.amount || ''}
+                        onChange={(e) =>
+                          setNewTransaction({ ...newTransaction, amount: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="transaction-date">Date</Label>
+                      <Input
+                        id="transaction-date"
+                        type="date"
+                        value={newTransaction.date || ''}
+                        onChange={(e) => setNewTransaction({ ...newTransaction, date: e.target.value })}
+                      />
+                    </div>
+                    <Button className="w-full" type="button" onClick={handleAddTransaction}>
+                      Add Transaction
+                    </Button>
+                  </>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Month Filter */}
@@ -404,6 +509,14 @@ export default function Budget() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
+            {categories.length === 0 && (
+              <div className="rounded-lg bg-slate-50 p-6 text-center">
+                <p className="text-sm text-slate-600">No budget categories yet.</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Click <span className="font-medium">Add Category</span> to set up your first allocation.
+                </p>
+              </div>
+            )}
             {categories.map(category => {
               const percentage = (category.spent / category.allocated) * 100;
               const remaining = category.allocated - category.spent;

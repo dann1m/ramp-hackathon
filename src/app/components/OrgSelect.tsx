@@ -39,7 +39,7 @@ export default function OrgSelect() {
     createOrg(name, teams)
     setOrgName('')
     setTeamNames('')
-    navigate('/', { replace: true })
+    navigate('/app', { replace: true })
   }
 
   const handleJoinWithCode = (e: React.FormEvent) => {
@@ -50,7 +50,7 @@ export default function OrgSelect() {
     }
     joinOrgWithCode(inviteCode.trim())
     setInviteCode('')
-    navigate('/', { replace: true })
+    navigate('/app', { replace: true })
   }
 
   const handleAssignTeam = (e: React.FormEvent) => {
@@ -62,7 +62,7 @@ export default function OrgSelect() {
 
   const handleSelect = (id: string) => {
     selectOrg(id)
-    navigate('/', { replace: true })
+    navigate('/app', { replace: true })
   }
 
   return (
@@ -205,4 +205,3 @@ export default function OrgSelect() {
     </div>
   )
 }
-

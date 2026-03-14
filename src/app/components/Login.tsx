@@ -5,8 +5,9 @@ import { Button } from './ui/button'
 import { Label } from './ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Input } from './ui/input'
-import { LayoutDashboard, UserCircle2, UserPlus } from 'lucide-react'
+import { UserCircle2, UserPlus } from 'lucide-react'
 import { useAuth } from './AuthContext'
+import logo from '../../assets/logo.png'
 
 type Tab = 'login' | 'signup'
 
@@ -71,8 +72,8 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <LayoutDashboard className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
+              <img src={logo} alt="ClubHub logo" className="h-full w-full object-cover" />
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Welcome to</p>
